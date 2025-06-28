@@ -1,0 +1,67 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Medication {
+  id: ID!
+  name: String!
+  dosage: String!
+  scheduleTime: DateTime!
+  durationDays: Float!
+  quantity: Float!
+  userId: String!
+  createdAt: DateTime!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type RefillAlert {
+  name: String!
+  status: String!
+}
+
+type DashboardOutput {
+  upcomingDoses: [Medication!]!
+  missedDoses: [Medication!]!
+  refillAlerts: [RefillAlert!]!
+}
+
+type User {
+  id: ID!
+  email: String!
+  name: String
+  phoneNumber: String
+  pushToken: String
+  prefersPush: Boolean!
+  prefersSms: Boolean!
+  timezone: String!
+  createdAt: DateTime!
+}
+
+type Query {
+  myMedications: [Medication!]!
+  dashboard: DashboardOutput!
+}
+
+type Mutation {
+  addMedication(input: AddMedicationInput!): Medication!
+  registerUser(input: RegisterUserInput!): User!
+}
+
+input AddMedicationInput {
+  name: String!
+  dosage: String!
+  scheduleTime: String!
+  durationDays: Float!
+  quantity: Float!
+}
+
+input RegisterUserInput {
+  id: String!
+  email: String!
+  name: String
+  pushToken: String
+}

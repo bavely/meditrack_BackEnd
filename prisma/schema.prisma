@@ -1,0 +1,61 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Medication {
+  id           String   @id @default(uuid())
+  name         String
+  dosage       String
+  quantity     Int
+  scheduleTime DateTime
+  durationDays Int
+  userId       String
+  instructions String?
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+
+model NotificationLog {
+  id           String   @id @default(uuid())
+  userId       String
+  medicationId String
+  message      String
+  channel      String
+  deliveredAt  DateTime @default(now())
+  openedAt     DateTime?
+}
+
+model DoseAction {
+  id           String   @id @default(uuid())
+  userId       String
+  medicationId String
+  takenAt      DateTime?
+  snoozedUntil DateTime?
+  createdAt    DateTime @default(now())
+}
+
+model User {
+  id          String   @id // Auth0 sub
+  email       String   @unique
+  name        String?
+  phoneNumber String?
+  pushToken   String?
+  prefersPush Boolean  @default(true)
+  prefersSms  Boolean  @default(false)
+  timezone    String   @default("UTC")
+  createdAt   DateTime @default(now())
+  medications Medication[]
+}
