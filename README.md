@@ -137,10 +137,7 @@ Since Auth0 Actions don’t fire for Google logins, the frontend manually insert
 
 ---
 
-## 👤 Contributors
-
-- 🧠 Backend: [Your Name]
-- 📱 Frontend: [Your Name]
+## 🌟 Credits
 - ❤️ Powered by NestJS, Prisma, Auth0, and OpenAI
 
 ---
