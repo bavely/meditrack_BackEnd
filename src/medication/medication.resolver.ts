@@ -16,19 +16,20 @@ export class MedicationResolver {
     @Args('input') input: AddMedicationInput,
     @Context('req') req
   ): Promise<Medication> {
-    return this.medicationService.create(input , req.user.userId) ;
+    return this.medicationService.create(input , req.userId) ;
   }
 
   @Query(() => [Medication])
   @UseGuards(AuthGuard('jwt'))
   async myMedications(@Context('req') req): Promise<Medication[]> {
-    return this.medicationService.findByUser(req.user.userId);
+    console.log('User ID:', req.user);
+    return this.medicationService.findByUser(req.userId);
   }
 
   @Query(() => DashboardOutput)
   @UseGuards(AuthGuard('jwt'))
   async dashboard(@Context('req') req): Promise<DashboardOutput> {
-    const meds = await this.medicationService.findByUser(req.user.userId);
+    const meds = await this.medicationService.findByUser(req.userId);
 
     return {
       upcomingDoses: meds.filter(med => {

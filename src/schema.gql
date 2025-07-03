@@ -44,6 +44,7 @@ type User {
 type Query {
   myMedications: [Medication!]!
   dashboard: DashboardOutput!
+  getUser(id: String!): User
 }
 
 type Mutation {

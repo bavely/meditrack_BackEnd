@@ -1,27 +1,28 @@
-// src/auth/jwt.strategy.ts
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import * as jwksRsa from 'jwks-rsa';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(configService: ConfigService) {
+    const jwtSecret = configService.get<string>('SUPABASE_JWT_SECRET');
+    if (!jwtSecret) {
+      throw new Error('SUPABASE_JWT_SECRET is not defined in environment variables.');
+    }
+
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKeyProvider: jwksRsa.passportJwtSecret({
-        cache: true,
-        rateLimit: true,
-        jwksRequestsPerMinute: 5,
-        jwksUri: `${process.env.AUTH0_ISSUER}.well-known/jwks.json`,
-      }),
-      audience: process.env.AUTH0_AUDIENCE,
-      issuer: process.env.AUTH0_ISSUER,
-      algorithms: ['RS256'],
+      secretOrKey: jwtSecret,
     });
   }
 
-  async validate(payload: any): Promise<{ userId: string }> {
-    return { userId: payload.sub };
+  async validate(payload: any) {
+    // Example payload from Supabase
+    return {
+      userId: payload.sub,
+      email: payload.email,
+      role: payload.role,
+    };
   }
 }
