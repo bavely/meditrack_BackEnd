@@ -1,4 +1,5 @@
 import { ObjectType, Field, ID } from '@nestjs/graphql';
+import { User as PrismaUser } from '@prisma/client';
 
 @ObjectType()
 export class User {
@@ -28,4 +29,23 @@ export class User {
 
   @Field()
   createdAt: Date;
+
+  @Field()
+  updatedAt: Date;
+
+  @Field()
+  aud: string;
+
+  @Field()
+  role: string;
+
+@Field()
+emailVerified: boolean;
+
+  @Field()
+phoneVerified: boolean;
+
+  constructor(prismaUser: PrismaUser) {
+    Object.assign(this, prismaUser);
+  }
 }

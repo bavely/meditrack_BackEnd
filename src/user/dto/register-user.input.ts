@@ -1,16 +1,24 @@
 import { InputType, Field } from '@nestjs/graphql';
 
 @InputType()
-export class RegisterUserInput {
-  @Field()
-  id: string; // Auth0 `sub`
+export class CreateUserInput {
+
 
   @Field()
-  email: string;
+  aud: string
+
+  @Field()
+  role: string
+
+  @Field()
+  email: string
 
   @Field({ nullable: true })
-  name?: string;
+  name?: string 
 
   @Field({ nullable: true })
-  pushToken?: string;
+  phoneNumber?: string
+
+  @Field()
+  password: string
 }

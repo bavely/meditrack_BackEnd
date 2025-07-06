@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { MedicationModule } from './medication/medication.module';
 import { AiModule } from './ai/ai.module';
+import { UserModule } from './user/user.module';
 import { ReminderModule } from './reminder/reminder.module';
 // import { NotificationsModule } from './notification/notifications.module';
 
@@ -26,6 +27,7 @@ import { ReminderModule } from './reminder/reminder.module';
     MedicationModule,
     AiModule,
     ReminderModule,
+    UserModule,
     // NotificationsModule,
   ],
 })
