@@ -39,4 +39,27 @@ export class AuthResolver {
     // req.user was populated by your JWT guard → contains { userId, email }
     return this.auth.refresh(req.user.userId, refreshToken);
   }
+
+  @Mutation(() => String, { name: 'verifyEmail' })
+  verifyEmail(@Args('token') token: string) : Promise<string> {
+    return this.auth.verifyEmail(token);
+  }
+
+  @Mutation(() => String, { name: 'resendVerificationEmail' })
+  async resendVerificationEmail(@Args('token') token: string) : Promise<string>  { return this.auth.requestNewEmailVerification(token); }
+
+  @Mutation(() => String, { name: 'forgotPassword' })
+  async forgotPassword(@Args('email') email: string): Promise<string> {
+    return this.auth.requestPasswordReset(email);
+  }
+
+  @Mutation(() => String, { name: 'resetPassword' })
+  async resetPassword(
+    @Args('token') token: string,
+    @Args('password') password: string,
+  ): Promise<string> {
+    return this.auth.resetPassword(token, password);
+  }
+
+
 }

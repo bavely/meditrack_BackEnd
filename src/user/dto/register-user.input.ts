@@ -21,4 +21,7 @@ export class CreateUserInput {
 
   @Field()
   password: string
+
+  @Field({ nullable: true })
+  confirmationSentAt?: Date
 }

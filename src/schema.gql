@@ -32,39 +32,18 @@ type LoginResponse {
   user: User
 }
 
-type Medication {
-  id: ID!
-  name: String!
-  dosage: String!
-  scheduleTime: DateTime!
-  durationDays: Float!
-  quantity: Float!
-  userId: String!
-  createdAt: DateTime!
-}
-
-type RefillAlert {
-  name: String!
-  status: String!
-}
-
-type DashboardOutput {
-  upcomingDoses: [Medication!]!
-  missedDoses: [Medication!]!
-  refillAlerts: [RefillAlert!]!
-}
-
 type Query {
   getUser: User!
-  myMedications: [Medication!]!
-  dashboard: DashboardOutput!
 }
 
 type Mutation {
   registerUser(input: CreateUserInput!): LoginResponse!
   login(email: String!, password: String!): LoginResponse!
   refreshToken(refreshToken: String!): LoginResponse!
-  addMedication(input: AddMedicationInput!): Medication!
+  verifyEmail(token: String!): String!
+  resendVerificationEmail(token: String!): String!
+  forgotPassword(email: String!): String!
+  resetPassword(token: String!, password: String!): String!
 }
 
 input CreateUserInput {
@@ -74,12 +53,5 @@ input CreateUserInput {
   name: String
   phoneNumber: String
   password: String!
-}
-
-input AddMedicationInput {
-  name: String!
-  dosage: String!
-  scheduleTime: String!
-  durationDays: Float!
-  quantity: Float!
+  confirmationSentAt: DateTime
 }

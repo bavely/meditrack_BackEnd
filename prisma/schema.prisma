@@ -2,112 +2,147 @@
 // learn more about it in the docs: [https://pris.ly/d/prisma-schema](https://pris.ly/d/prisma-schema)
 
 generator client {
-provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-provider = "postgresql"
-url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum RepeatPattern {
+  DAILY
+  WEEKLY
+  MONTHLY
+  CUSTOM
+}
+
+enum DoseActionType {
+  TAKEN
+  SKIPPED
+  MISSED
+}
+
+enum NotificationChannel {
+  PUSH
+  SMS
 }
 
 model User {
-id                   String   @id @default(uuid())                                      // Auth provider sub
-aud                  String                                                     // User audit (e.g. "authenticated")
-role                 String                                                     // e.g. "authenticated"
-email                String   @unique
-password             String                                                // hashed password, null if using OAuth
-name                 String?
-phoneNumber          String?
-pushToken            String?
-prefersPush          Boolean  @default(true)
-prefersSms           Boolean  @default(false)
-timezone             String   @default("UTC")
-emailConfirmedAt     DateTime?                                                // timestamp when email confirmed
-confirmationSentAt   DateTime?                                                // timestamp when confirmation email sent
-lastSignInAt         DateTime?                                                // last login time
-emailVerified        Boolean  @default(false)
-phoneVerified        Boolean  @default(false)
-appMetadata          Json?                                                    // arbitrary JSON metadata
-createdAt            DateTime @default(now())
-updatedAt            DateTime @updatedAt
+  id                   String   @id @default(uuid())                                      // Auth provider sub
+  aud                  String                                                    // User audit (e.g. "authenticated")
+  role                 String                                                    // e.g. "authenticated"
+  email                String   @unique
+  password             String?                                               // hashed password, null if using OAuth
+  name                 String?
+  phoneNumber          String?
+  prefersPush          Boolean  @default(true)
+  prefersSms           Boolean  @default(false)
+  timezone             String   @default("UTC")
+  emailConfirmedAt     DateTime?                                               // timestamp when email confirmed
+  confirmationSentAt   DateTime?                                               // timestamp when confirmation email sent
+  lastSignInAt         DateTime?                                               // last login time
+  emailVerified        Boolean  @default(false)
+  phoneVerified        Boolean  @default(false)
+  appMetadata          Json?                                                   // arbitrary JSON metadata
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
-medications          Medication[]
-notifications        NotificationLog[]
-doseActions          DoseAction[]
-refreshTokens        RefreshToken[]                                          // one-to-many
-emailVerifications   EmailVerificationToken[]
-passwordResetTokens  PasswordResetToken[]
+  medications          Medication[]
+  notifications        NotificationLog[]
+  doseActions          DoseAction[]
+  refreshTokens        RefreshToken[]                                          // one-to-many
+  emailVerifications   EmailVerificationToken[]
+  passwordResetTokens  PasswordResetToken[]
 }
 
 model Medication {
-id           String   @id @default(uuid())
-name         String
-dosage       String
-quantity     Int
-scheduleTime DateTime
-durationDays Int
-userId       String
-instructions String?
-createdAt    DateTime @default(now())
+  id               String    @id @default(uuid())
+  userId           String
+  name             String
+  dosage           String
+  quantity         Int
+  instructions     String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-user         User     @relation(fields: [userId], references: [id])
+  user             User      @relation(fields: [userId], references: [id])
+  schedule         Schedule?
+  doseActions      DoseAction[]
+  notifications    NotificationLog[]
 }
 
-model NotificationLog {
-id           String   @id @default(uuid())
-userId       String
-medicationId String
-message      String
-channel      String
-deliveredAt  DateTime @default(now())
-openedAt     DateTime?
+model Schedule {
+  id               String         @id @default(uuid())
+  medicationId     String         @unique
+  repeatPattern    RepeatPattern  @default(DAILY)
+  times            String[]       // e.g. ["08:00", "20:00"]
+  startDate        DateTime
+  durationDays     Int            // total days or 0 for indefinite
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
-user         User     @relation(fields: [userId], references: [id])
+  medication       Medication     @relation(fields: [medicationId], references: [id])
 }
 
 model DoseAction {
-id           String   @id @default(uuid())
-userId       String
-medicationId String
-takenAt      DateTime?
-snoozedUntil DateTime?
-createdAt    DateTime @default(now())
+  id               String         @id @default(uuid())
+  userId           String
+  medicationId     String
+  actionType       DoseActionType
+  actionTime       DateTime
+  snoozedUntil     DateTime?
+  createdAt        DateTime       @default(now())
 
-user         User     @relation(fields: [userId], references: [id])
+  user             User           @relation(fields: [userId], references: [id])
+  medication       Medication     @relation(fields: [medicationId], references: [id])
 }
 
-/// Stores long-lived refresh tokens for issuing new access tokens
+model NotificationLog {
+  id               String              @id @default(uuid())
+  userId           String
+  medicationId     String?
+  scheduledTime    DateTime
+  sentTime         DateTime?
+  channel          NotificationChannel
+  successful       Boolean             @default(false)
+  errorMessage     String?
+  createdAt        DateTime            @default(now())
+
+  user             User                @relation(fields: [userId], references: [id])
+  medication       Medication?         @relation(fields: [medicationId], references: [id])
+}
+
 model RefreshToken {
-id         String   @id @default(uuid())
-userId     String
-token      String   @unique
-expiresAt  DateTime
-createdAt  DateTime @default(now())
-revoked    Boolean  @default(false)
+  id               String    @id @default(uuid())
+  userId           String
+  token            String    @unique
+  expiresAt        DateTime
+  createdAt        DateTime  @default(now())
+  revoked          Boolean   @default(false)
 
-user       User     @relation(fields: [userId], references: [id])
+  user             User      @relation(fields: [userId], references: [id])
 }
 
-/// One-time email verification tokens
 model EmailVerificationToken {
-id         String   @id @default(uuid())
-userId     String
-token      String   @unique
-expiresAt  DateTime
-createdAt  DateTime @default(now())
-used       Boolean  @default(false)
+  id               String    @id @default(uuid())
+  userId           String
+  token            String    @unique
+  expiresAt        DateTime
+  createdAt        DateTime  @default(now())
+  used             Boolean   @default(false)
 
-user       User     @relation(fields: [userId], references: [id])
+  user             User      @relation(fields: [userId], references: [id])
 }
 
-/// One-time password reset tokens
 model PasswordResetToken {
-id         String   @id @default(uuid())
-userId     String
-token      String   @unique
-expiresAt  DateTime
-createdAt  DateTime @default(now())
-used       Boolean  @default(false)
+  id               String    @id @default(uuid())
+  userId           String
+  token            String    @unique
+  expiresAt        DateTime
+  createdAt        DateTime  @default(now())
+  used             Boolean   @default(false)
 
-user       User     @relation(fields: [userId], references: [id])
+  user             User      @relation(fields: [userId], references: [id])
 }
