@@ -77,99 +77,7 @@ export class AuthService {
     return user;
   }
 
-    async verifyEmail(token: string) {
-    const rec = await this.prisma.emailVerificationToken.findUnique({
-      where: { token }, include: { user: true }
-    });
-    if (!rec || rec.used || rec.expiresAt < new Date()) {
-      return "Invalid or expired token"; // Token not found, already used, or expired
-    }
-    await this.prisma.user.update({
-      where: { id: rec.userId },
-      data: { emailVerified: true, emailConfirmedAt: new Date() },
-    });
-    await this.prisma.emailVerificationToken.update({
-      where: { id: rec.id },
-      data: { used: true },
-    });
-    return "Email verified successfully"; // Email verification successful
-  }
-
-  async requestNewEmailVerification(token: string) {
-
-     const rec = await this.prisma.emailVerificationToken.findUnique({
-      where: { token }, include: { user: true }
-    });
-    if (!rec || rec.used ) {
-      return "Invalid or expired token"; // Token not found, already used, or expired
-    }
-
-    const userId = rec.userId;
-        const newToken = randomBytes(32).toString('hex');
-    const expiresAt = addHours(new Date(), 24);
-    await this.prisma.emailVerificationToken.create({
-      data: { userId: userId, token: newToken, expiresAt },
-    });
-
-    const link = `${this.config.get('FRONTEND_URL')}/verify?token=${newToken}`;
-    console.log(rec.user)
-    await this.sendMail(
-      rec.user.email,
-      'Verify your email',
-      `<p>Hi ${rec.user.name || ''},</p>
-       <p>Click <a href="${link}">here</a> to verify (expires in 24h).</p>`
-    );
-    return `New verification email sent to ${redactEmail(rec.user.email)}`; // New verification email sent successfully
-  }
-
-    async requestPasswordReset(email: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user) return "User not found"; // User not found
-
-    const token = randomBytes(32).toString('hex');
-    const expiresAt = addHours(new Date(), 1);
-    await this.prisma.passwordResetToken.create({
-      data: { userId: user.id, token, expiresAt },
-    });
-
-    const link = `${this.config.get('FRONTEND_URL')}/reset-password?token=${token}`;
-    await this.sendMail(
-      user.email,
-      'Reset your password',
-      `<p>To reset your password, click <a href="${link}">here</a> (expires in 1h).</p>`
-    );
-
-    return "Password reset link sent"; // Password reset link sent successfully
-  }
-
-  async resetPassword(token: string, newPassword: string) {
-    const rec = await this.prisma.passwordResetToken.findUnique({
-      where: { token }, include: { user: true }
-    });
-    if (!rec || rec.used || rec.expiresAt < new Date()) {
-      return "Invalid or expired token. Please initiate a new password reset request."; // Token not found, already used, or expired
-    }
-    const hash = await bcrypt.hash(newPassword, 10);
-    await this.prisma.user.update({
-      where: { id: rec.userId },
-      data: { password: hash },
-    });
-    await this.prisma.passwordResetToken.update({
-      where: { id: rec.id },
-      data: { used: true },
-    });
-
-        await this.sendMail(
-      rec.user.email,
-      'Verify your email',
-      `<p>Hi ${rec.user.name || ''},</p>
-       <p>Your password has been reset. If you did not request this, please contact support at (phone) for assistance.</p>`
-    );
-
-    return "Password reset successfully"; // Password reset successful
-  }
-
-  async validateUser(email: string, pass: string) {
+   async validateUser(email: string, pass: string) {
     const user = await this.users.findByEmail(email);
     if (!user) return null;
     if (!user.password || typeof user.password !== 'string') return null;
@@ -178,7 +86,7 @@ export class AuthService {
     return user;
   }
 
-async login(
+  async login(
   @Args('email') email: string,
   @Args('password') password: string,
 ): Promise<LoginResponse> {
@@ -186,7 +94,7 @@ async login(
   if (!user) {
     throw new UnauthorizedException('Invalid credentials');
   }
-
+console.log("User from auth service",user);
   const payload = { sub: user.id, email: user.email, role: user.role };
   const accessToken = this.jwt.sign(payload, { secret: process.env.JWT_ACCESS_SECRET , expiresIn: '15m' });
   const refreshToken = this.jwt.sign(payload, { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '7d' });
@@ -211,10 +119,107 @@ async login(
   async refresh(userId: string, token: string) {
     // verify stored token match
     const saved = await this.users.getRefreshToken(userId);
-    if (saved !== token) throw new UnauthorizedException();
+    if (saved !== token) throw new UnauthorizedException("Invalid refresh token");
 
     const payload = { sub: userId };
     const accessToken = this.jwt.sign(payload);
     return { accessToken };
   }
+
+    async verifyEmail(token: string) {
+    const rec = await this.prisma.emailVerificationToken.findUnique({
+      where: { token }, include: { user: true }
+    });
+    if (!rec || rec.used || rec.expiresAt < new Date()) {
+      throw new Error("Invalid or expired token"); // Token not found, already used, or expired
+    }
+    await this.prisma.user.update({
+      where: { id: rec.userId },
+      data: { emailVerified: true, emailConfirmedAt: new Date() },
+    });
+    await this.prisma.emailVerificationToken.update({
+      where: { id: rec.id },
+      data: { used: true },
+    });
+    return "Email verified successfully"; // Email verification successful
+  }
+
+  async requestNewEmailVerification(token: string) {
+
+     const rec = await this.prisma.emailVerificationToken.findUnique({
+      where: { token }, include: { user: true }
+    });
+    if (!rec || rec.used ) {
+      throw new Error("Invalid or expired token"); // Token not found, already used, or expired
+    }
+
+    const userId = rec.userId;
+        const newToken = randomBytes(32).toString('hex');
+    const expiresAt = addHours(new Date(), 24);
+    await this.prisma.emailVerificationToken.create({
+      data: { userId: userId, token: newToken, expiresAt },
+    });
+
+    const link = `${this.config.get('FRONTEND_URL')}/verify?token=${newToken}`;
+    console.log(rec.user)
+    await this.sendMail(
+      rec.user.email,
+      'Verify your email',
+      `<p>Hi ${rec.user.name || ''},</p>
+       <p>Click <a href="${link}">here</a> to verify (expires in 24h).</p>`
+    );
+    return `New verification email sent to ${redactEmail(rec.user.email)}`; // New verification email sent successfully
+  }
+
+    async requestPasswordReset(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) throw new Error("User not found"); // User not found
+
+    const token = randomBytes(32).toString('hex');
+    const expiresAt = addHours(new Date(), 1);
+    await this.prisma.passwordResetToken.create({
+      data: { userId: user.id, token, expiresAt },
+    });
+
+    const link = `${this.config.get('FRONTEND_URL')}/reset-password?token=${token}`;
+    await this.sendMail(
+      user.email,
+      'Reset your password',
+      `<p>To reset your password, click <a href="${link}">here</a> (expires in 1h).</p>`
+    );
+
+    return "Password reset link sent"; // Password reset link sent successfully
+
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const rec = await this.prisma.passwordResetToken.findUnique({
+      where: { token }, include: { user: true }
+    });
+    if (!rec || rec.used || rec.expiresAt < new Date()) {
+      throw new Error("Invalid or expired token. Please initiate a new password reset."); // Token not found, already used, or expired
+    }
+    const hash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: rec.userId },
+      data: { password: hash },
+    });
+    await this.prisma.passwordResetToken.update({
+      where: { id: rec.id },
+      data: { used: true },
+    });
+
+        await this.sendMail(
+      rec.user.email,
+      'Verify your email',
+      `<p>Hi ${rec.user.name || ''},</p>
+       <p>Your password has been reset. If you did not request this, please contact support at (phone) for assistance.</p>`
+    );
+
+    return "Password reset successfully"; // Password reset successful
+  }
+
+ 
+
+
 }

@@ -4,14 +4,14 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
-
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { MedicationModule } from './medication/medication.module';
 import { AiModule } from './ai/ai.module';
 import { UserModule } from './user/user.module';
 import { ReminderModule } from './reminder/reminder.module';
-// import { NotificationsModule } from './notification/notifications.module';
+import { GraphqlExceptionInterceptor } from './common/interceptors/graphql-exception.interceptor';
 
 @Module({
   imports: [
@@ -29,6 +29,13 @@ import { ReminderModule } from './reminder/reminder.module';
     ReminderModule,
     UserModule,
     // NotificationsModule,
+  ],
+  controllers: [],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: GraphqlExceptionInterceptor,
+    }
   ],
 })
 export class AppModule {}

@@ -2,6 +2,21 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type FieldError {
+  field: String!
+  message: String!
+}
+
+type RefreshPayload {
+  accessToken: String!
+}
+
+type RefreshResponse {
+  success: Boolean!
+  errors: [FieldError!]!
+  data: RefreshPayload
+}
+
 type User {
   id: ID!
   email: String!
@@ -32,18 +47,40 @@ type LoginResponse {
   user: User
 }
 
+type AuthResponse {
+  success: Boolean!
+  errors: [FieldError!]!
+  data: LoginResponse
+}
+
+type VerificationsPayload {
+  message: String!
+}
+
+type VerificationsResponse {
+  success: Boolean!
+  errors: [FieldError!]!
+  data: VerificationsPayload
+}
+
+type UserResponse {
+  success: Boolean!
+  errors: [FieldError!]!
+  data: User
+}
+
 type Query {
-  getUser: User!
+  getUser: UserResponse!
 }
 
 type Mutation {
-  registerUser(input: CreateUserInput!): LoginResponse!
-  login(email: String!, password: String!): LoginResponse!
-  refreshToken(refreshToken: String!): LoginResponse!
-  verifyEmail(token: String!): String!
-  resendVerificationEmail(token: String!): String!
-  forgotPassword(email: String!): String!
-  resetPassword(token: String!, password: String!): String!
+  registerUser(input: CreateUserInput!): AuthResponse!
+  login(email: String!, password: String!): AuthResponse!
+  refreshToken(refreshToken: String!): RefreshResponse!
+  verifyEmail(token: String!): VerificationsResponse!
+  resendVerificationEmail(token: String!): VerificationsResponse!
+  forgotPassword(email: String!): VerificationsResponse!
+  resetPassword(token: String!, password: String!): VerificationsResponse!
 }
 
 input CreateUserInput {
