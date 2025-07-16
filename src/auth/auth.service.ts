@@ -130,6 +130,7 @@ console.log("User from auth service",user);
     const rec = await this.prisma.emailVerificationToken.findUnique({
       where: { token }, include: { user: true }
     });
+    console.log(rec, "rec", token);
     if (!rec || rec.used || rec.expiresAt < new Date()) {
       throw new Error("Invalid or expired token"); // Token not found, already used, or expired
     }
