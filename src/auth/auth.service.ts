@@ -7,12 +7,12 @@ import { LoginResponse } from './models/login-response.model';
 import { Args } from '@nestjs/graphql';
 import { PrismaService } from '../prisma/prisma.service';
 //import FormData from "form-data"; // form-data v4.0.1
-import FormData = require('form-data'); 
+import FormData = require('form-data');
 import Mailgun from "mailgun.js"; //
 import { ConfigService } from '@nestjs/config';
 import { randomBytes } from 'crypto';
 import { addHours } from 'date-fns';
-import {  redactEmail } from '../common/utils/email-redactor'; // Assuming you have a utility to redact emails
+import { redactEmail } from '../common/utils/email-redactor'; // Assuming you have a utility to redact emails
 @Injectable()
 export class AuthService {
 
@@ -37,7 +37,7 @@ export class AuthService {
     });
   }
 
-   private async sendMail(to: string, subject: string, html: string) {
+  private async sendMail(to: string, subject: string, html: string) {
     console.log(`Sending email to ${to} with subject "${subject}" domain ${this.mailDomain} subject "${subject}" html "${html}"`);
     return await this.mailgunClient.messages.create(this.mailDomain, {
       from: `Meditrack <postmaster@${this.mailDomain}>`,
@@ -49,20 +49,20 @@ export class AuthService {
 
   async register(input: CreateUserInput) {
     const hash = await bcrypt.hash(input.password, 10);
-    const user = await this.users.create({ 
-        email: input.email,
-        password: hash,
-        role: 'USER',
-        aud: 'mobile', // or 'web' based on your logic
-        name: input.name, // Optional, can be empty
-        phoneNumber: input.phoneNumber, // Optional, can be empty
-        confirmationSentAt: new Date(),
-        gender: input.gender,
-        dob: input.dob
+    const user = await this.users.create({
+      email: input.email,
+      password: hash,
+      role: 'USER',
+      aud: 'mobile', // or 'web' based on your logic
+      name: input.name, // Optional, can be empty
+      phoneNumber: input.phoneNumber, // Optional, can be empty
+      confirmationSentAt: new Date(),
+      gender: input.gender,
+      dob: input.dob
 
     });
 
-        const token = randomBytes(32).toString('hex');
+    const token = randomBytes(32).toString('hex');
     const expiresAt = addHours(new Date(), 24);
     await this.prisma.emailVerificationToken.create({
       data: { userId: user.id, token, expiresAt },
@@ -80,7 +80,7 @@ export class AuthService {
     return user;
   }
 
-   async validateUser(email: string, pass: string) {
+  async validateUser(email: string, pass: string) {
     const user = await this.users.findByEmail(email);
     if (!user) return null;
     if (!user.password || typeof user.password !== 'string') return null;
@@ -90,57 +90,57 @@ export class AuthService {
   }
 
   async login(
-  @Args('email') email: string,
-  @Args('password') password: string,
-): Promise<LoginResponse> {
-  const user = await this.validateUser(email, password);
-  if (!user) {
-    throw new UnauthorizedException('Invalid credentials');
-  }
-console.log("User from auth service",user);
-  const payload = { sub: user.id, email: user.email, role: user.role };
-  const accessToken = this.jwt.sign(payload, { secret: process.env.JWT_ACCESS_SECRET , expiresIn: '15m' });
-  const refreshToken = this.jwt.sign(payload, { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '7d' });
+    @Args('email') email: string,
+    @Args('password') password: string,
+  ): Promise<LoginResponse> {
+    const user = await this.validateUser(email, password);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    console.log("User from auth service", user);
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    const accessToken = this.jwt.sign(payload, { secret: process.env.JWT_ACCESS_SECRET, expiresIn: '15m' });
+    const refreshToken = this.jwt.sign(payload, { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '7d' });
 
-  // Optionally, save the refresh token for later validation
-  await this.users.setRefreshToken(user.id, refreshToken);
+    // Optionally, save the refresh token for later validation
+    await this.users.setRefreshToken(user.id, refreshToken);
 
-  // map null → undefined so it fits your GraphQL model
-  const mappedUser = user
-    ? {
+    // map null → undefined so it fits your GraphQL model
+    const mappedUser = user
+      ? {
         ...user,
- id:                  user.id                     ?? undefined,
-  // omit password for security
-  email:               user.email                  ?? undefined,
-  name:                user.name                   ?? undefined,
-  phoneNumber:         user.phoneNumber            ?? undefined,     // new
-  prefersPush:         user.prefersPush            ?? undefined,
-  prefersSms:          user.prefersSms             ?? undefined,
-  timezone:            user.timezone               ?? undefined,
-  createdAt:           user.createdAt              ?? undefined,
-  updatedAt:           user.updatedAt              ?? undefined,
-  aud:                 user.aud                    ?? undefined,
-  role:                user.role                   ?? undefined,
-  lastSignInAt:        user.lastSignInAt           ?? undefined,
-  emailVerified:       user.emailVerified          ?? undefined,
-  phoneVerified:       user.phoneVerified          ?? undefined,
-  emailConfirmedAt:    user.emailConfirmedAt       ?? undefined,
-  confirmationSentAt:  user.confirmationSentAt     ?? undefined,
-  phoneConfirmedAt:    user.phoneConfirmedAt       ?? undefined,      // new
-  phoneConfirmationSentAt: user.phoneConfirmationSentAt ?? undefined, // new
-  gender:              user.gender                 ?? undefined,
-  dob:                 user.dob                    ?? undefined,
-  appMetadata:         typeof user.appMetadata === 'object' && user.appMetadata !== null
-                        ? user.appMetadata as Record<string, any>
-                        : undefined      // new
+        id: user.id ?? undefined,
+        // omit password for security
+        email: user.email ?? undefined,
+        name: user.name ?? undefined,
+        phoneNumber: user.phoneNumber ?? undefined,     // new
+        prefersPush: user.prefersPush ?? undefined,
+        prefersSms: user.prefersSms ?? undefined,
+        timezone: user.timezone ?? undefined,
+        createdAt: user.createdAt ?? undefined,
+        updatedAt: user.updatedAt ?? undefined,
+        aud: user.aud ?? undefined,
+        role: user.role ?? undefined,
+        lastSignInAt: user.lastSignInAt ?? undefined,
+        emailVerified: user.emailVerified ?? undefined,
+        phoneVerified: user.phoneVerified ?? undefined,
+        emailConfirmedAt: user.emailConfirmedAt ?? undefined,
+        confirmationSentAt: user.confirmationSentAt ?? undefined,
+        phoneConfirmedAt: user.phoneConfirmedAt ?? undefined,      // new
+        phoneConfirmationSentAt: user.phoneConfirmationSentAt ?? undefined, // new
+        gender: user.gender ?? undefined,
+        dob: user.dob ?? undefined,
+        appMetadata: typeof user.appMetadata === 'object' && user.appMetadata !== null
+          ? user.appMetadata as Record<string, any>
+          : undefined      // new
 
 
 
       }
-    : null;
+      : null;
 
-  return { accessToken, refreshToken, user: mappedUser };
-}
+    return { accessToken, refreshToken, user: mappedUser };
+  }
 
 
   async refresh(userId: string, token: string) {
@@ -153,7 +153,7 @@ console.log("User from auth service",user);
     return { accessToken };
   }
 
-    async verifyEmail(token: string) {
+  async verifyEmail(token: string) {
     const rec = await this.prisma.emailVerificationToken.findUnique({
       where: { token }, include: { user: true }
     });
@@ -174,15 +174,15 @@ console.log("User from auth service",user);
 
   async requestNewEmailVerification(token: string) {
 
-     const rec = await this.prisma.emailVerificationToken.findUnique({
+    const rec = await this.prisma.emailVerificationToken.findUnique({
       where: { token }, include: { user: true }
     });
-    if (!rec || rec.used ) {
+    if (!rec || rec.used) {
       throw new Error("Invalid or expired token"); // Token not found, already used, or expired
     }
 
     const userId = rec.userId;
-        const newToken = randomBytes(32).toString('hex');
+    const newToken = randomBytes(32).toString('hex');
     const expiresAt = addHours(new Date(), 24);
     await this.prisma.emailVerificationToken.create({
       data: { userId: userId, token: newToken, expiresAt },
@@ -199,7 +199,7 @@ console.log("User from auth service",user);
     return `New verification email sent to ${redactEmail(rec.user.email)}`; // New verification email sent successfully
   }
 
-    async requestPasswordReset(email: string) {
+  async requestPasswordReset(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) throw new Error("User not found"); // User not found
 
@@ -237,7 +237,7 @@ console.log("User from auth service",user);
       data: { used: true },
     });
 
-        await this.sendMail(
+    await this.sendMail(
       rec.user.email,
       'Verify your email',
       `<p>Hi ${rec.user.name || ''},</p>
@@ -247,7 +247,7 @@ console.log("User from auth service",user);
     return "Password reset successfully"; // Password reset successful
   }
 
- 
+
 
 
 }

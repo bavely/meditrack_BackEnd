@@ -19,25 +19,37 @@ type RefreshResponse {
 
 type User {
   id: ID!
+  aud: String!
+  role: String!
   email: String!
   name: String
   phoneNumber: String
-  pushToken: String
   prefersPush: Boolean!
   prefersSms: Boolean!
   timezone: String!
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  aud: String!
-  role: String!
+  lastSignInAt: DateTime
   emailVerified: Boolean!
   phoneVerified: Boolean!
+  emailConfirmedAt: DateTime
+  confirmationSentAt: DateTime
+  phoneConfirmedAt: DateTime
+  phoneConfirmationSentAt: DateTime
+  gender: String!
+  dob: DateTime!
+  appMetadata: JSONObject
+  createdAt: DateTime!
+  updatedAt: DateTime!
 }
 
 """
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
 scalar DateTime
+
+"""
+The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSONObject
 
 type LoginResponse {
   accessToken: String!
@@ -91,4 +103,6 @@ input CreateUserInput {
   phoneNumber: String
   password: String!
   confirmationSentAt: DateTime
+  gender: String!
+  dob: DateTime!
 }
