@@ -57,6 +57,9 @@ export class AuthService {
         name: input.name, // Optional, can be empty
         phoneNumber: input.phoneNumber, // Optional, can be empty
         confirmationSentAt: new Date(),
+        gender: input.gender,
+        dob: input.dob
+
     });
 
         const token = randomBytes(32).toString('hex');
@@ -106,8 +109,32 @@ console.log("User from auth service",user);
   const mappedUser = user
     ? {
         ...user,
-        name: user.name     ?? undefined,
-        phoneNumber: user.phoneNumber ?? undefined,
+ id:                  user.id                     ?? undefined,
+  // omit password for security
+  email:               user.email                  ?? undefined,
+  name:                user.name                   ?? undefined,
+  phoneNumber:         user.phoneNumber            ?? undefined,     // new
+  prefersPush:         user.prefersPush            ?? undefined,
+  prefersSms:          user.prefersSms             ?? undefined,
+  timezone:            user.timezone               ?? undefined,
+  createdAt:           user.createdAt              ?? undefined,
+  updatedAt:           user.updatedAt              ?? undefined,
+  aud:                 user.aud                    ?? undefined,
+  role:                user.role                   ?? undefined,
+  lastSignInAt:        user.lastSignInAt           ?? undefined,
+  emailVerified:       user.emailVerified          ?? undefined,
+  phoneVerified:       user.phoneVerified          ?? undefined,
+  emailConfirmedAt:    user.emailConfirmedAt       ?? undefined,
+  confirmationSentAt:  user.confirmationSentAt     ?? undefined,
+  phoneConfirmedAt:    user.phoneConfirmedAt       ?? undefined,      // new
+  phoneConfirmationSentAt: user.phoneConfirmationSentAt ?? undefined, // new
+  gender:              user.gender                 ?? undefined,
+  dob:                 user.dob                    ?? undefined,
+  appMetadata:         typeof user.appMetadata === 'object' && user.appMetadata !== null
+                        ? user.appMetadata as Record<string, any>
+                        : undefined      // new
+
+
 
       }
     : null;

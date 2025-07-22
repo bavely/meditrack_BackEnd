@@ -24,4 +24,10 @@ export class CreateUserInput {
 
   @Field({ nullable: true })
   confirmationSentAt?: Date
+
+  @Field()
+  gender: string
+
+  @Field()
+  dob: Date
 }
