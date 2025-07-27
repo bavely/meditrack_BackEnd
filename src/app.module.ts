@@ -12,7 +12,7 @@ import { AiModule } from './ai/ai.module';
 import { UserModule } from './user/user.module';
 import { ReminderModule } from './reminder/reminder.module';
 import { GraphqlExceptionInterceptor } from './common/interceptors/graphql-exception.interceptor';
-
+import { OcrModule } from './ocr/ocr.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -28,6 +28,7 @@ import { GraphqlExceptionInterceptor } from './common/interceptors/graphql-excep
     AiModule,
     ReminderModule,
     UserModule,
+    OcrModule,
     // NotificationsModule,
   ],
   controllers: [],

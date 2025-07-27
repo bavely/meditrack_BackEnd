@@ -81,6 +81,20 @@ type UserResponse {
   data: User
 }
 
+type ParseMedicationLabelMultipleOutput {
+  name: String!
+  dosage: String!
+  quantity: Float
+  instructions: String
+  therapy: String
+}
+
+type ParseResponse {
+  success: Boolean!
+  errors: [FieldError!]!
+  data: ParseMedicationLabelMultipleOutput
+}
+
 type Query {
   getUser: UserResponse!
 }
@@ -93,6 +107,7 @@ type Mutation {
   resendVerificationEmail(token: String!): VerificationsResponse!
   forgotPassword(email: String!): VerificationsResponse!
   resetPassword(token: String!, password: String!): VerificationsResponse!
+  parseMedicationLabelMultiple(input: [Upload!]!): ParseResponse!
 }
 
 input CreateUserInput {
@@ -106,3 +121,6 @@ input CreateUserInput {
   gender: String!
   dob: DateTime!
 }
+
+"""The `Upload` scalar type represents a file upload."""
+scalar Upload
