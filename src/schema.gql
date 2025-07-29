@@ -81,6 +81,20 @@ type UserResponse {
   data: User
 }
 
+type ParsedLabel {
+  name: String!
+  dosage: String!
+  quantity: String!
+  instructions: String!
+  therapy: String!
+}
+
+type ParselabelResponse {
+  success: Boolean!
+  errors: [FieldError!]!
+  data: ParsedLabel
+}
+
 type ParseMedicationLabelMultipleOutput {
   name: String!
   dosage: String!
@@ -107,6 +121,7 @@ type Mutation {
   resendVerificationEmail(token: String!): VerificationsResponse!
   forgotPassword(email: String!): VerificationsResponse!
   resetPassword(token: String!, password: String!): VerificationsResponse!
+  parseMedicationLabel(label: String!): ParselabelResponse!
   parseMedicationLabelMultiple(input: [Upload!]!): ParseResponse!
 }
 
