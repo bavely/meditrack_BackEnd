@@ -1,14 +1,17 @@
+
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
-import OpenAI from 'openai';
+import { AzureOpenAI } from "openai";
 
 
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name); // Add a logger for better debugging
-  private readonly openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
+  private readonly endpoint = process.env.AZURE_OPENAI_ENDPOINT;
+  private readonly apiKey = process.env.AZURE_OPENAI_API_KEY;
+  private readonly apiVersion = process.env.AZURE_OPENAI_API_VERSION;
+  private readonly deployment = process.env.AZURE_OPENAI_DEPLOYMENT;
+  private readonly openai = new AzureOpenAI({ endpoint: this.endpoint, apiKey: this.apiKey, apiVersion: this.apiVersion, deployment: this.deployment });
   async askAi(aiPrompt: string, userPrompt: string): Promise<any> { // Change return type to any, as parsing happens in OcrService
     try {
       this.logger.debug('Calling OpenAI API...');
@@ -16,7 +19,7 @@ export class AiService {
         model: 'gpt-4', // Using gpt-4 as specified
           messages: [
             {
-              role: 'system',
+              role: 'developer',
               content: aiPrompt, // System prompt for AI's role and expected output format
             },
             {
