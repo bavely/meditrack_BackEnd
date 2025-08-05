@@ -1,8 +1,7 @@
-import { Args, Mutation, Resolver } from '@nestjs/graphql';
+import { Resolver, Mutation, Args } from '@nestjs/graphql';
 import { Logger } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { ParselabelResponse } from './dto/ai-label-response';
-import { ParsedLabel } from './models/ai-label-response';
 
 @Resolver()
 export class AiResolver {
