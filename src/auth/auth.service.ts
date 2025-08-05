@@ -245,9 +245,9 @@ export class AuthService {
 
     await this.sendMail(
       rec.user.email,
-      'Verify your email',
+      'Password reset confirmation',
       `<p>Hi ${rec.user.name || ''},</p>
-       <p>Your password has been reset. If you did not request this, please contact support at (phone) for assistance.</p>`
+       <p>Your password has been reset successfully. If you did not request this password reset, please contact support at (phone) for assistance.</p>`
     );
 
     return "Password reset successfully"; // Password reset successful
