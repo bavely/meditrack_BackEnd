@@ -151,9 +151,8 @@ export class AuthService {
 
 
   async refresh(userId: string, token: string) {
-    // verify stored token match
-    const saved = await this.users.getRefreshToken(userId);
-    if (saved !== token) throw new UnauthorizedException("Invalid refresh token");
+    const valid = await this.users.getRefreshToken(userId, token);
+    if (!valid) throw new UnauthorizedException("Invalid refresh token");
 
     const payload = { sub: userId };
     const accessToken = this.jwt.sign(payload);
