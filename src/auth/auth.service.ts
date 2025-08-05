@@ -13,12 +13,13 @@ import { ConfigService } from '@nestjs/config';
 import { randomBytes } from 'crypto';
 import { addHours } from 'date-fns';
 import { redactEmail } from '../common/utils/email-redactor'; // Assuming you have a utility to redact emails
+import { AiService } from 'src/ai/ai.service';
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private mailgunClient;
   private mailDomain: string;
-  private readonly logger = new Logger(AuthService.name);
+  private readonly aiService: AiService;
 
 
   constructor(

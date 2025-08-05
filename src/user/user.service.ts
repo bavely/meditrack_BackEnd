@@ -42,7 +42,7 @@ export class UserService {
     const hashed = await bcrypt.hash(token, 10);
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
     await this.prisma.refreshToken.upsert({
-      where: { userId },
+      where: { id: userId },
       update: { token: hashed, expiresAt, revoked: false },
       create: {
         userId,
