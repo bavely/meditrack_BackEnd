@@ -108,7 +108,6 @@ export class AuthService {
     // map null → undefined so it fits your GraphQL model
     const mappedUser = user
       ? {
-        ...user,
         id: user.id ?? undefined,
         // omit password for security
         email: user.email ?? undefined,
@@ -131,7 +130,7 @@ export class AuthService {
         gender: user.gender ?? undefined,
         dob: user.dob ?? undefined,
         appMetadata: typeof user.appMetadata === 'object' && user.appMetadata !== null
-          ? user.appMetadata as Record<string, any>
+          ? (user.appMetadata as Record<string, any>)
           : undefined      // new
 
 
@@ -149,7 +148,7 @@ export class AuthService {
     if (saved !== token) throw new UnauthorizedException("Invalid refresh token");
 
     const payload = { sub: userId };
-    const accessToken = this.jwt.sign(payload);
+    const accessToken = this.jwt.sign(payload, { secret: process.env.JWT_ACCESS_SECRET, expiresIn: '15m' });
     return { accessToken };
   }
 
