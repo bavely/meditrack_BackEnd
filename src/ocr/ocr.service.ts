@@ -1,15 +1,21 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  InternalServerErrorException,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import type { FileUpload } from 'graphql-upload-ts';
-import { createWorker } from 'tesseract.js';
+import { createWorker, Worker } from 'tesseract.js';
 import { Readable } from 'stream';
 import * as sharp from 'sharp'; // For image buffer validation
 import { ParseMedicationLabelMultipleOutput } from './dto/parse-multiple.output';
 import { AiService } from 'src/ai/ai.service';
 
 @Injectable()
-export class OcrService {
+export class OcrService implements OnModuleDestroy {
   private readonly logger = new Logger(OcrService.name);
-  private readonly worker = createWorker(); // Tesseract worker initialized once
+  private worker: Worker | null = null; // Persist worker across requests
 
   constructor(private readonly aiService: AiService) {}
 
@@ -33,10 +39,30 @@ export class OcrService {
     }
   }
 
+  /** Get or create the singleton Tesseract worker */
+  private async getWorker(): Promise<Worker> {
+    if (!this.worker) {
+      try {
+        const worker = await createWorker();
+        await worker.load();
+        if ('initialize' in worker && typeof (worker as any).initialize === 'function') {
+          await (worker as any).initialize('eng');
+        } else {
+          await worker.reinitialize('eng');
+        }
+        this.worker = worker;
+      } catch (error) {
+        this.logger.error('[OCR] Failed to initialize worker', error);
+        throw new InternalServerErrorException('Failed to initialize OCR worker');
+      }
+    }
+
+    return this.worker;
+  }
+
   /** Run OCR on a list of image files */
   private async ocrImages(files: FileUpload[]): Promise<string[]> {
-    const worker = await this.worker;
-    await worker.reinitialize('eng'); // Reinitialize language only (load is deprecated)
+    const worker = await this.getWorker();
 
     const results: string[] = [];
 
@@ -59,8 +85,15 @@ export class OcrService {
       }
     }
 
-    await worker.terminate(); // Clean up worker
     return results;
+  }
+
+  /** Gracefully terminate the Tesseract worker on shutdown */
+  async onModuleDestroy() {
+    if (this.worker) {
+      await this.worker.terminate();
+      this.worker = null;
+    }
   }
 
   /** Remove PHI and noisy content */

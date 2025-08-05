@@ -15,7 +15,7 @@ import { addHours } from 'date-fns';
 import { redactEmail } from '../common/utils/email-redactor'; // Assuming you have a utility to redact emails
 @Injectable()
 export class AuthService {
-
+  private readonly logger = new Logger(AuthService.name);
   private mailgunClient;
   private mailDomain: string;
   private readonly logger = new Logger(AuthService.name);
@@ -27,6 +27,9 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
   ) {
+
+    this.logger.debug(`Mailgun domain configured: ${this.config.get<string>('MAILGUN_DOMAIN')}`);
+
     // Initialize Mailgun client
     const mailgun = new Mailgun(FormData);
     this.mailDomain = this.config.get<string>('MAILGUN_DOMAIN') || 'default-domain.com'; // Set your Mailgun domain
@@ -38,6 +41,7 @@ export class AuthService {
   }
 
   private async sendMail(to: string, subject: string, html: string) {
+
     this.logger.debug(`Sending email to ${to} with subject "${subject}"`);
     return this.mailgunClient.messages.create(this.mailDomain, {
       from: `Meditrack <postmaster@${this.mailDomain}>`,
@@ -45,6 +49,7 @@ export class AuthService {
       subject,
       html,
     });
+
   }
 
   async register(input: CreateUserInput) {
@@ -101,7 +106,7 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    console.log("User from auth service", user);
+    this.logger.debug(`User ${user.id} authenticated successfully`);
     const payload = { sub: user.id, email: user.email, role: user.role };
     const accessToken = this.jwt.sign(payload, { secret: process.env.JWT_ACCESS_SECRET, expiresIn: '15m' });
     const refreshToken = this.jwt.sign(payload, { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '7d' });
@@ -112,7 +117,6 @@ export class AuthService {
     // map null → undefined so it fits your GraphQL model
     const mappedUser = user
       ? {
-        ...user,
         id: user.id ?? undefined,
         // omit password for security
         email: user.email ?? undefined,
@@ -135,7 +139,7 @@ export class AuthService {
         gender: user.gender ?? undefined,
         dob: user.dob ?? undefined,
         appMetadata: typeof user.appMetadata === 'object' && user.appMetadata !== null
-          ? user.appMetadata as Record<string, any>
+          ? (user.appMetadata as Record<string, any>)
           : undefined      // new
 
 
@@ -148,12 +152,11 @@ export class AuthService {
 
 
   async refresh(userId: string, token: string) {
-    // verify stored token match
-    const saved = await this.users.getRefreshToken(userId);
-    if (saved !== token) throw new UnauthorizedException("Invalid refresh token");
+    const valid = await this.users.getRefreshToken(userId, token);
+    if (!valid) throw new UnauthorizedException("Invalid refresh token");
 
     const payload = { sub: userId };
-    const accessToken = this.jwt.sign(payload);
+    const accessToken = this.jwt.sign(payload, { secret: process.env.JWT_ACCESS_SECRET, expiresIn: '15m' });
     return { accessToken };
   }
 
@@ -161,7 +164,7 @@ export class AuthService {
     const rec = await this.prisma.emailVerificationToken.findUnique({
       where: { token }, include: { user: true }
     });
-    console.log(rec, "rec", token);
+    this.logger.debug(`Verifying email for user ${rec?.userId}`);
     if (!rec || rec.used || rec.expiresAt < new Date()) {
       throw new Error("Invalid or expired token"); // Token not found, already used, or expired
     }
@@ -193,11 +196,13 @@ export class AuthService {
     });
 
     const link = `${this.config.get('FRONTEND_URL')}/verify?token=${newToken}`;
+
     try {
       await this.sendMail(
         rec.user.email,
         'Verify your email',
         `<p>Hi ${rec.user.name || ''},</p>
+
        <p>Click <a href="${link}">here</a> to verify (expires in 24h).</p>`
       );
     } catch (error) {
@@ -250,6 +255,7 @@ export class AuthService {
       data: { used: true },
     });
 
+
     try {
       await this.sendMail(
         rec.user.email,
@@ -260,6 +266,7 @@ export class AuthService {
     } catch (error) {
       this.logger.error('Failed to send password reset confirmation email', error);
     }
+
 
     return "Password reset successfully"; // Password reset successful
   }
