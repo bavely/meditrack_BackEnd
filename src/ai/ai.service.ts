@@ -29,7 +29,7 @@ export class AiService {
           ],
       });
 
-      console.log(response, 'response from openai');
+      this.logger.debug('Received response from OpenAI API');
 
       // Check if the response structure is as expected
       if (response.choices && response.choices.length > 0) {
@@ -129,3 +129,4 @@ Return ONLY valid JSON. No explanation.
     return errors;
 }
 }
+
