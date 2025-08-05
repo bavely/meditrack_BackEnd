@@ -5,7 +5,7 @@ import { AuthService } from './auth.service';
 import { CreateUserInput } from '../user/dto/register-user.input';
 import {RefreshResponse} from './dto/refresh-response.dto';
 import { GqlAuthGuard } from '../common/guards/gql-auth-guard';
-import {AuthResponse} from './dto/register-user.input'; // Assuming this is the correct import path
+import { AuthResponse } from './dto/auth-response.dto';
 import {VerificationsResponse} from './dto/verificatins-response'
 @Resolver()
 export class AuthResolver {
