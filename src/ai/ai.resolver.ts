@@ -1,12 +1,11 @@
-import { Args, Mutation, Resolver } from '@nestjs/graphql';
+import { Resolver, Mutation, Args } from '@nestjs/graphql';
 import { Logger } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { ParselabelResponse } from './dto/ai-label-response';
-import { ParsedLabel } from './models/ai-label-response';
 
 @Resolver()
 export class AiResolver {
-    private readonly logger = new Logger(AiService.name);
+    private readonly logger = new Logger(AiResolver.name);
     constructor(private readonly aiService: AiService) {}
 
     @Mutation(() => ParselabelResponse)
@@ -97,17 +96,17 @@ export class AiResolver {
                     }
                 };
             }
-            console.log( {
+            this.logger.debug('Result from AI resolver', {
                 success: true,
                 errors: [],
                 data: {
-                    name: parsedResult.name ,
-                    dosage: parsedResult.dosage ,
-                    quantity: parsedResult.quantity ,
-                    instructions: parsedResult.instructions ,
-                    therapy: parsedResult.therapy 
-                } // Return the JSON string as expected
-            }, 'result from ai resolver');
+                    name: parsedResult.name,
+                    dosage: parsedResult.dosage,
+                    quantity: parsedResult.quantity,
+                    instructions: parsedResult.instructions,
+                    therapy: parsedResult.therapy,
+                },
+            });
             // Return successful response with JSON string data
             return {
                 success: true,
@@ -183,3 +182,4 @@ export class AiResolver {
         }
     }
 }
+

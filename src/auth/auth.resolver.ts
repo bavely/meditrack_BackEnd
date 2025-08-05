@@ -1,21 +1,22 @@
 // src/auth/auth.resolver.ts
 import { Resolver, Mutation, Args, Context } from '@nestjs/graphql';
-import { UseGuards } from '@nestjs/common';
+import { UseGuards, Logger } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserInput } from '../user/dto/register-user.input';
 import {RefreshResponse} from './dto/refresh-response.dto';
 import { GqlAuthGuard } from '../common/guards/gql-auth-guard';
-import {AuthResponse} from './dto/register-user.input'; // Assuming this is the correct import path
+import { AuthResponse } from './dto/auth-response.dto';
 import {VerificationsResponse} from './dto/verificatins-response'
 @Resolver()
 export class AuthResolver {
+  private readonly logger = new Logger(AuthResolver.name);
   constructor(private readonly auth: AuthService) {}
 
   @Mutation(() => AuthResponse, { name: 'registerUser' })
   async registerUser(
     @Args('input') input: CreateUserInput,
   ): Promise<AuthResponse> {
-    console.log('Registering user:', input);
+    this.logger.debug(`Registering user with email: ${input.email}`);
     // First create the user in your DB:
     await this.auth.register(input);
 

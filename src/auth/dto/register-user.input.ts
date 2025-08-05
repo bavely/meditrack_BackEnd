@@ -1,16 +1,10 @@
-import { ObjectType, Field, ID } from '@nestjs/graphql';
-import { ResponseType } from '../../common/dto/response.dto';
-import { LoginResponse } from '../models/login-response.model';
-@ObjectType()
+import { InputType, Field } from '@nestjs/graphql';
+
+@InputType()
 export class RegisterUserInput {
-email: string;
-password: string;
-} 
+  @Field()
+  email: string;
 
-
-@ObjectType()
-export class AuthResponse extends ResponseType<LoginResponse>(LoginResponse) {
-    
+  @Field()
+  password: string;
 }
-
-

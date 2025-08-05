@@ -15,11 +15,11 @@ export class AiService {
   async askAi(aiPrompt: string, userPrompt: string): Promise<any> { // Change return type to any, as parsing happens in OcrService
     try {
       this.logger.debug('Calling OpenAI API...');
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-4', // Using gpt-4 as specified
+        const response = await this.openai.chat.completions.create({
+          model: 'gpt-4', // Using gpt-4 as specified
           messages: [
             {
-              role: 'developer',
+              role: 'system',
               content: aiPrompt, // System prompt for AI's role and expected output format
             },
             {
@@ -27,14 +27,15 @@ export class AiService {
               content: userPrompt, // User's specific input for parsing
             },
           ],
-      });
+        });
 
-      console.log(response, 'response from openai');
+      this.logger.debug('Received response from OpenAI API');
 
       // Check if the response structure is as expected
       if (response.choices && response.choices.length > 0) {
         const content = response.choices[0].message.content;
         this.logger.debug(`Raw content from OpenAI: ${content}`);
+        this.logger.log('OpenAI API call succeeded');
         // With response_format: "json_object", the content should be parseable JSON
         // The JSON.parse will now be handled more safely in OcrService with try/catch
         return content; // Return raw content string to OcrService for parsing
@@ -129,3 +130,4 @@ Return ONLY valid JSON. No explanation.
     return errors;
 }
 }
+
