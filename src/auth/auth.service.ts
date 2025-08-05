@@ -18,6 +18,7 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private mailgunClient;
   private mailDomain: string;
+  private readonly logger = new Logger(AuthService.name);
 
 
   constructor(
@@ -26,7 +27,9 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
   ) {
+
     this.logger.debug(`Mailgun domain configured: ${this.config.get<string>('MAILGUN_DOMAIN')}`);
+
     // Initialize Mailgun client
     const mailgun = new Mailgun(FormData);
     this.mailDomain = this.config.get<string>('MAILGUN_DOMAIN') || 'default-domain.com'; // Set your Mailgun domain
@@ -38,20 +41,15 @@ export class AuthService {
   }
 
   private async sendMail(to: string, subject: string, html: string) {
-    this.logger.log(`Sending email to ${to} with subject "${subject}"`);
-    try {
-      const result = await this.mailgunClient.messages.create(this.mailDomain, {
-        from: `Meditrack <postmaster@${this.mailDomain}>`,
-        to,
-        subject,
-        html,
-      });
-      this.logger.debug(`Mailgun message sent: ${result.id}`);
-      return result;
-    } catch (error) {
-      this.logger.error('Error sending email', error);
-      throw error;
-    }
+
+    this.logger.debug(`Sending email to ${to} with subject "${subject}"`);
+    return this.mailgunClient.messages.create(this.mailDomain, {
+      from: `Meditrack <postmaster@${this.mailDomain}>`,
+      to,
+      subject,
+      html,
+    });
+
   }
 
   async register(input: CreateUserInput) {
@@ -76,12 +74,16 @@ export class AuthService {
     });
 
     const link = `${this.config.get('FRONTEND_URL')}/verify?token=${token}`;
-    await this.sendMail(
-      user.email,
-      'Verify your email',
-      `<p>Hi ${user.name || ''},</p>
+    try {
+      await this.sendMail(
+        user.email,
+        'Verify your email',
+        `<p>Hi ${user.name || ''},</p>
        <p>Click <a href="${link}">here</a> to verify (expires in 24h).</p>`
-    );
+      );
+    } catch (error) {
+      this.logger.error('Failed to send verification email', error);
+    }
 
 
     return user;
@@ -194,13 +196,19 @@ export class AuthService {
     });
 
     const link = `${this.config.get('FRONTEND_URL')}/verify?token=${newToken}`;
-    this.logger.debug(`Resending verification email to user ${rec.user?.id}`);
-    await this.sendMail(
-      rec.user.email,
-      'Verify your email',
-      `<p>Hi ${rec.user.name || ''},</p>
+
+    try {
+      await this.sendMail(
+        rec.user.email,
+        'Verify your email',
+        `<p>Hi ${rec.user.name || ''},</p>
+
        <p>Click <a href="${link}">here</a> to verify (expires in 24h).</p>`
-    );
+      );
+    } catch (error) {
+      this.logger.error('Failed to send verification email', error);
+      throw error;
+    }
     return `New verification email sent to ${redactEmail(rec.user.email)}`; // New verification email sent successfully
   }
 
@@ -215,11 +223,16 @@ export class AuthService {
     });
 
     const link = `${this.config.get('FRONTEND_URL')}/reset-password?token=${token}`;
-    await this.sendMail(
-      user.email,
-      'Reset your password',
-      `<p>To reset your password, click <a href="${link}">here</a> (expires in 1h).</p>`
-    );
+    try {
+      await this.sendMail(
+        user.email,
+        'Reset your password',
+        `<p>To reset your password, click <a href="${link}">here</a> (expires in 1h).</p>`
+      );
+    } catch (error) {
+      this.logger.error('Failed to send password reset email', error);
+      throw error;
+    }
 
     return "Password reset link sent"; // Password reset link sent successfully
 
@@ -242,12 +255,18 @@ export class AuthService {
       data: { used: true },
     });
 
-    await this.sendMail(
-      rec.user.email,
-      'Password reset confirmation',
-      `<p>Hi ${rec.user.name || ''},</p>
-       <p>Your password has been reset successfully. If you did not request this password reset, please contact support at (phone) for assistance.</p>`
-    );
+
+    try {
+      await this.sendMail(
+        rec.user.email,
+        'Verify your email',
+        `<p>Hi ${rec.user.name || ''},</p>
+       <p>Your password has been reset. If you did not request this, please contact support at (phone) for assistance.</p>`
+      );
+    } catch (error) {
+      this.logger.error('Failed to send password reset confirmation email', error);
+    }
+
 
     return "Password reset successfully"; // Password reset successful
   }
