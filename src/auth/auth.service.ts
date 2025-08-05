@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UserService } from '../user/user.service';
@@ -15,7 +15,7 @@ import { addHours } from 'date-fns';
 import { redactEmail } from '../common/utils/email-redactor'; // Assuming you have a utility to redact emails
 @Injectable()
 export class AuthService {
-
+  private readonly logger = new Logger(AuthService.name);
   private mailgunClient;
   private mailDomain: string;
 
@@ -26,7 +26,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
   ) {
-    console.log(this.config.get<string>('MAILGUN_DOMAIN'), this.config.get<string>('MAILGUN_API_KEY'));
+    this.logger.debug(`Mailgun domain configured: ${this.config.get<string>('MAILGUN_DOMAIN')}`);
     // Initialize Mailgun client
     const mailgun = new Mailgun(FormData);
     this.mailDomain = this.config.get<string>('MAILGUN_DOMAIN') || 'default-domain.com'; // Set your Mailgun domain
@@ -38,13 +38,20 @@ export class AuthService {
   }
 
   private async sendMail(to: string, subject: string, html: string) {
-    console.log(`Sending email to ${to} with subject "${subject}" domain ${this.mailDomain} subject "${subject}" html "${html}"`);
-    return await this.mailgunClient.messages.create(this.mailDomain, {
-      from: `Meditrack <postmaster@${this.mailDomain}>`,
-      to,
-      subject,
-      html,
-    }).then((result) => console.log(result)).catch((error) => console.log(error));
+    this.logger.log(`Sending email to ${to} with subject "${subject}"`);
+    try {
+      const result = await this.mailgunClient.messages.create(this.mailDomain, {
+        from: `Meditrack <postmaster@${this.mailDomain}>`,
+        to,
+        subject,
+        html,
+      });
+      this.logger.debug(`Mailgun message sent: ${result.id}`);
+      return result;
+    } catch (error) {
+      this.logger.error('Error sending email', error);
+      throw error;
+    }
   }
 
   async register(input: CreateUserInput) {
@@ -97,7 +104,7 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    console.log("User from auth service", user);
+    this.logger.debug(`User ${user.id} authenticated successfully`);
     const payload = { sub: user.id, email: user.email, role: user.role };
     const accessToken = this.jwt.sign(payload, { secret: process.env.JWT_ACCESS_SECRET, expiresIn: '15m' });
     const refreshToken = this.jwt.sign(payload, { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '7d' });
@@ -157,7 +164,7 @@ export class AuthService {
     const rec = await this.prisma.emailVerificationToken.findUnique({
       where: { token }, include: { user: true }
     });
-    console.log(rec, "rec", token);
+    this.logger.debug(`Verifying email for user ${rec?.userId}`);
     if (!rec || rec.used || rec.expiresAt < new Date()) {
       throw new Error("Invalid or expired token"); // Token not found, already used, or expired
     }
@@ -189,7 +196,7 @@ export class AuthService {
     });
 
     const link = `${this.config.get('FRONTEND_URL')}/verify?token=${newToken}`;
-    console.log(rec.user)
+    this.logger.debug(`Resending verification email to user ${rec.user?.id}`);
     await this.sendMail(
       rec.user.email,
       'Verify your email',

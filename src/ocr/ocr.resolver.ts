@@ -1,5 +1,5 @@
 import { Args, Mutation, Resolver } from '@nestjs/graphql';
-import { UseGuards } from '@nestjs/common';
+import { UseGuards, Logger } from '@nestjs/common';
 import { GqlAuthGuard } from "../common/guards/gql-auth-guard"
 // import { ParseMedicationLabelMultipleInput } from './dto/parse-multiple.input';
 import { OcrService } from './ocr.service';
@@ -8,6 +8,7 @@ import { ParseResponse } from './dto/parse-reponse';
 import { GraphQLUpload, FileUpload } from 'graphql-upload-ts';
 @Resolver()
 export class OcrResolver {
+    private readonly logger = new Logger(OcrResolver.name);
     constructor(private readonly ocrService: OcrService) { }
 
     @Mutation(() => ParseResponse)
@@ -15,7 +16,7 @@ export class OcrResolver {
     async parseMedicationLabelMultiple(
         @Args('input', { type: () => [GraphQLUpload] }) input: FileUpload[],
     ) {
-        console.log(input);
+        this.logger.debug(`Received ${input.length} file(s) for OCR parsing`);
 
         const result = await this.ocrService.parseMultiple(input);
         return {
@@ -25,3 +26,4 @@ export class OcrResolver {
         };
     }
 }
+

@@ -1,14 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserInput } from './dto/register-user.input';
 import { User  } from '@prisma/client';
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name);
   constructor(private prisma: PrismaService) {}
 
   async create(data: CreateUserInput): Promise<User> {
-    console.log('Creating user with data:', data);
+    this.logger.debug(`Creating user with email: ${data.email}`);
     let userExists = await this.prisma.user.findUnique({
       where: { email: data.email },
     });
@@ -48,3 +49,4 @@ async getRefreshToken(userId: string): Promise<string | null> {
   }
 
 }
+
