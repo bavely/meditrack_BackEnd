@@ -9,8 +9,10 @@ import type { FileUpload } from 'graphql-upload-ts';
 import { createWorker, Worker } from 'tesseract.js';
 import { Readable } from 'stream';
 import * as sharp from 'sharp'; // For image buffer validation
+import * as fs from 'fs';
+import { join } from 'path';
 import { ParseMedicationLabelMultipleOutput } from './dto/parse-multiple.output';
-import { AiService } from 'src/ai/ai.service';
+import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class OcrService implements OnModuleDestroy {
@@ -45,7 +47,10 @@ export class OcrService implements OnModuleDestroy {
       try {
         const worker = await createWorker();
         await worker.load();
-        if ('initialize' in worker && typeof (worker as any).initialize === 'function') {
+        if (
+          'initialize' in worker &&
+          typeof (worker as any).initialize === 'function'
+        ) {
           await (worker as any).initialize('eng');
         } else {
           await worker.reinitialize('eng');
@@ -53,7 +58,9 @@ export class OcrService implements OnModuleDestroy {
         this.worker = worker;
       } catch (error) {
         this.logger.error('[OCR] Failed to initialize worker', error);
-        throw new InternalServerErrorException('Failed to initialize OCR worker');
+        throw new InternalServerErrorException(
+          'Failed to initialize OCR worker',
+        );
       }
     }
 
@@ -136,5 +143,39 @@ Return ONLY valid JSON. No explanation.
     this.logger.debug('AI Parsing result:', parsed);
 
     return parsed as ParseMedicationLabelMultipleOutput;
+  }
+
+  /**
+   * Unwrap a cylindrical label image and parse its text.
+   * Currently acts as a passthrough while returning a local image URL.
+   */
+  async unwrapCylindricalLabel(
+    image: FileUpload,
+  ): Promise<{
+    imageUrl: string;
+    parsed?: ParseMedicationLabelMultipleOutput;
+  }> {
+    const file = await image;
+    const { createReadStream, filename, mimetype, encoding } = file;
+
+    const buffer = await this.streamToBuffer(createReadStream());
+    await this.validateImageBuffer(buffer, filename);
+
+    const outDir = join(process.cwd(), 'unwrapped');
+    await fs.promises.mkdir(outDir, { recursive: true });
+    const ts = Date.now();
+    const outPath = join(outDir, `${ts}-${filename}`);
+    await fs.promises.writeFile(outPath, buffer);
+
+    const upload: FileUpload = {
+      filename: `${ts}-${filename}`,
+      mimetype: mimetype ?? 'image/png',
+      encoding: encoding ?? '7bit',
+      createReadStream: () => fs.createReadStream(outPath),
+    } as unknown as FileUpload;
+
+    const parsed = await this.parseMultiple([upload]);
+
+    return { imageUrl: outPath, parsed };
   }
 }
