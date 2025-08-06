@@ -111,8 +111,23 @@ Since Auth0 Actions don’t fire for Google logins, the frontend manually insert
   "frequency": "daily at 9 AM",
   "durationDays": 30,
   "quantity": 30,
-  "refillCount": 2
+ "refillCount": 2
 }
+```
+
+### Cylindrical Label Unwrapping
+
+Upload a short MP4 showing a bottle's label and receive a flattened image.
+
+```bash
+curl -F "file=@/path/to/label.mp4" \
+  http://localhost:3000/ocr/unwrap
+```
+
+**Response**
+
+```json
+{ "imageUrl": "http://localhost:3000/uploads/<file>.jpg" }
 ```
 
 ---
