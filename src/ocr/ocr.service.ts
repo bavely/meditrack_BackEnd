@@ -9,6 +9,10 @@ import type { FileUpload } from 'graphql-upload-ts';
 import { createWorker, Worker } from 'tesseract.js';
 import { Readable } from 'stream';
 import * as sharp from 'sharp'; // For image buffer validation
+import { promises as fs } from 'fs';
+import { tmpdir } from 'os';
+import * as path from 'path';
+import type { Express } from 'express';
 import { ParseMedicationLabelMultipleOutput } from './dto/parse-multiple.output';
 import { AiService } from 'src/ai/ai.service';
 
@@ -119,6 +123,56 @@ Return ONLY valid JSON. No explanation.
 
     this.logger.debug('Sending sanitized text to OpenAI...');
     return this.aiService.askAi(systemPrompt, userPrompt);
+  }
+
+  /**
+   * Accepts a cylindrical video label and converts it into a flattened image.
+   * Returns a public URL to the generated JPEG under /uploads.
+   */
+  async unwrapCylindricalLabel(file: Express.Multer.File): Promise<string> {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    const tempDir = tmpdir();
+    const tempVideoPath = path.join(tempDir, `${Date.now()}-${file.originalname}`);
+    await fs.writeFile(tempVideoPath, file.buffer);
+
+    const framePath = path.join(tempDir, `${Date.now()}-frame.png`);
+    const ffmpegMod = await import('fluent-ffmpeg');
+    const ffmpeg = ffmpegMod.default || ffmpegMod;
+    await new Promise<void>((resolve, reject) => {
+      ffmpeg(tempVideoPath)
+        .frames(1)
+        .output(framePath)
+        .on('end', () => resolve())
+        .on('error', reject)
+        .run();
+    });
+
+    const cvMod = await import('opencv4nodejs');
+    const cv = cvMod.default || cvMod;
+    const src = cv.imread(framePath);
+    const center = new cv.Point2(src.cols / 2, src.rows / 2);
+    const radius = Math.min(src.cols, src.rows) / 2;
+    const unwrapped = src.warpPolar(
+      new cv.Size(src.cols, src.rows),
+      center,
+      radius,
+      cv.INTER_LINEAR + cv.WARP_FILL_OUTLIERS + cv.WARP_INVERSE_MAP,
+    );
+
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    await fs.mkdir(uploadsDir, { recursive: true });
+    const outputFilename = `${Date.now()}.jpg`;
+    const outputPath = path.join(uploadsDir, outputFilename);
+    cv.imwrite(outputPath, unwrapped);
+
+    await fs.unlink(tempVideoPath).catch(() => undefined);
+    await fs.unlink(framePath).catch(() => undefined);
+
+    const baseUrl = (process.env.GRAPHQL_API_URL || '').replace(/\/$/, '');
+    return `${baseUrl}/uploads/${outputFilename}`;
   }
 
   /** Public API: process multiple uploaded images */
