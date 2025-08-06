@@ -86,6 +86,22 @@ GraphQL Playground: `http://localhost:3000/graphql`
 
 ---
 
+## 🐳 Docker
+
+Build the Docker image:
+
+```bash
+docker build -t meditrack-backend .
+```
+
+Run the container:
+
+```bash
+docker run -p 8000:8000 meditrack-backend
+```
+
+---
+
 ## 🔐 Auth0 Integration
 
 - JWT is passed via `Authorization: Bearer <token>`
