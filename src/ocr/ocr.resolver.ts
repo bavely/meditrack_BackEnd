@@ -33,7 +33,29 @@ export class OcrResolver {
     @Args('image', { type: () => GraphQLUpload }) image: FileUpload,
   ) {
     this.logger.debug('Received image for cylindrical unwrapping');
-    const result = await this.ocrService.unwrapCylindricalLabel(image);
+    // Convert FileUpload to Express.Multer.File-like object
+    const { filename, mimetype, encoding } = image;
+    const chunks: Buffer[] = [];
+    const stream = image.createReadStream();
+    await new Promise<void>((resolve, reject) => {
+      stream.on('data', (chunk) => chunks.push(chunk));
+      stream.on('end', () => resolve());
+      stream.on('error', reject);
+    });
+    const buffer = Buffer.concat(chunks);
+    const file: Express.Multer.File = {
+      fieldname: 'image',
+      originalname: filename,
+      encoding,
+      mimetype,
+      size: buffer.length,
+      buffer,
+      stream,
+      destination: '',
+      filename,
+      path: '',
+    };
+    const result = await this.ocrService.unwrapCylindricalLabel(file);
     return {
       success: true,
       errors: [],

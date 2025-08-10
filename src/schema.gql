@@ -55,9 +55,7 @@ type LoginResponse {
   accessToken: String!
   refreshToken: String!
 
-  """
-  Logged-in user object
-  """
+  """Logged-in user object"""
   user: User
 }
 
@@ -151,7 +149,5 @@ input CreateUserInput {
   dob: DateTime!
 }
 
-"""
-The `Upload` scalar type represents a file upload.
-"""
+"""The `Upload` scalar type represents a file upload."""
 scalar Upload

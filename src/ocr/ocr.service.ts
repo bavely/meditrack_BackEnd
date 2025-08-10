@@ -199,37 +199,5 @@ Return ONLY valid JSON. No explanation.
     return parsed as ParseMedicationLabelMultipleOutput;
   }
 
-  /**
-   * Unwrap a cylindrical label image and parse its text.
-   * Currently acts as a passthrough while returning a local image URL.
-   */
-  async unwrapCylindricalLabel(
-    image: FileUpload,
-  ): Promise<{
-    imageUrl: string;
-    parsed?: ParseMedicationLabelMultipleOutput;
-  }> {
-    const file = await image;
-    const { createReadStream, filename, mimetype, encoding } = file;
 
-    const buffer = await this.streamToBuffer(createReadStream());
-    await this.validateImageBuffer(buffer, filename);
-
-    const outDir = join(process.cwd(), 'unwrapped');
-    await fs.promises.mkdir(outDir, { recursive: true });
-    const ts = Date.now();
-    const outPath = join(outDir, `${ts}-${filename}`);
-    await fs.promises.writeFile(outPath, buffer);
-
-    const upload: FileUpload = {
-      filename: `${ts}-${filename}`,
-      mimetype: mimetype ?? 'image/png',
-      encoding: encoding ?? '7bit',
-      createReadStream: () => fs.createReadStream(outPath),
-    } as unknown as FileUpload;
-
-    const parsed = await this.parseMultiple([upload]);
-
-    return { imageUrl: outPath, parsed };
-  }
 }

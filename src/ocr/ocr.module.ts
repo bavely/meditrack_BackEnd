@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MulterModule } from '@nestjs/platform-express';
-import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
+// import { ServeStaticModule } from '@nestjs/serve-static';
+// import { join } from 'path';
 import { OcrResolver } from './ocr.resolver';
 import { OcrService } from './ocr.service';
 import { AiModule } from '../ai/ai.module';
@@ -14,10 +14,10 @@ import { OcrController } from './ocr.controller';
   imports: [
     AiModule,
     MulterModule.register({}),
-    ServeStaticModule.forRoot({
-      rootPath: join(process.cwd(), 'uploads'),
-      serveRoot: '/uploads',
-    }),
+    // ServeStaticModule.forRoot({
+    //   rootPath: join(process.cwd(), 'uploads'),
+    //   serveRoot: '/uploads',
+    // }),
   ],
 })
 export class OcrModule {}

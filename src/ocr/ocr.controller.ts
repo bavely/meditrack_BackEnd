@@ -9,6 +9,7 @@ export class OcrController {
   @Post('unwrap')
   @UseInterceptors(FileInterceptor('file'))
   async unwrap(@UploadedFile() file: Express.Multer.File) {
+    console.log(file);
     const imageUrl = await this.ocrService.unwrapCylindricalLabel(file);
     return { imageUrl };
   }
