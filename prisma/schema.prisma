@@ -65,7 +65,7 @@ model Medication {
   id            String            @id @default(uuid())
   userId        String
   name          String
-  dosage        String
+  dosage        String  // e.g. "500mg", "1 tablet" or "5 ml" etc.
   quantity      Int
   instructions  String?
   createdAt     DateTime          @default(now())
