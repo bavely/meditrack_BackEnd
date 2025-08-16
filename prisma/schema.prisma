@@ -66,8 +66,11 @@ model Medication {
   userId        String
   name          String
   dosage        String  // e.g. "500mg", "1 tablet" or "5 ml" etc.
-  quantity      Int
-  instructions  String?
+  quantity      Int     // Start quentity, e.g. 30 pills
+  quantityLeft  Int     // Remaining quantity, e.g. 20 pills
+  instructions  String? // Instruction to take the medication e.g. take 1 daily with food
+  medicationStartDate DateTime? // First time to take the medication
+  estimatedEndDate DateTime?    // estimate time to run out of the medication and need a refill
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
   therapy       String?
@@ -82,14 +85,14 @@ model Schedule {
   medicationId  String        @unique
   repeatPattern RepeatPattern @default(DAILY)
   times         String[] // e.g. ["08:00", "20:00"]
-  startDate     DateTime
+  startDate     DateTime // when the medication schedule starts e.g. 2023-01-01T08:00:00Z when the user starts taking the medication and recorded on meditrack
   durationDays  Int // total days or 0 for indefinite
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
   medication Medication @relation(fields: [medicationId], references: [id])
 }
-
+// Note: start date can be different than the actual medication start date "medicationStartDate" from medication table 
 model DoseAction {
   id           String         @id @default(uuid())
   userId       String
